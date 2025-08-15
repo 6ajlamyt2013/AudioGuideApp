@@ -1,33 +1,43 @@
 package com.rashot.audioguideai.presentation.service
 
-class LocationTracker @Inject constructor(
-    private val context: Context,
-    private val client: FusedLocationProviderClient
-) {
-    @SuppressLint("MissingPermission")
-    fun getLocationUpdates(interval: Long): Flow<Location> = callbackFlow {
-        val request = LocationRequest.create().apply {
-            this.interval = interval
-            this.priority = Priority.PRIORITY_HIGH_ACCURACY
-        }
+data class MapPoint(val latitude: Double, val longitude: Double) {
+    fun toYandexPoint(): Point = Point(latitude, longitude)
+}
 
-        val callback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                super.onLocationResult(result)
-                result.locations.lastOrNull()?.let { location ->
-                    trySend(location)
-                }
+@SuppressLint("MissingPermission")
+fun getLocationUpdates(interval: Long): Flow<Location> = callbackFlow {
+    val request = LocationRequest.create().apply {
+        this.interval = interval
+        this.priority = Priority.PRIORITY_HIGH_ACCURACY
+    }
+
+    val callback = object : LocationCallback() {
+        override fun onLocationResult(result: LocationResult) {
+            super.onLocationResult(result)
+            result.locations.lastOrNull()?.let { location ->
+                trySend(location)
             }
         }
+    }
 
-        client.requestLocationUpdates(
-            request,
-            callback,
-            Looper.getMainLooper()
-        )
+    if (ActivityCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED
+    ) {
+        throw RuntimeException("Location permissions not granted")
+    }
 
-        awaitClose {
-            client.removeLocationUpdates(callback)
-        }
+    client.requestLocationUpdates(
+        request,
+        callback,
+        Looper.getMainLooper()
+    )
+
+    awaitClose {
+        client.removeLocationUpdates(callback)
     }
 }

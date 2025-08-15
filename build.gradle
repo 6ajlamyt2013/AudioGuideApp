@@ -14,10 +14,17 @@ buildscript {
 
 allprojects {
     repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://maven.google.com' }
-        maven { url 'https://jitpack.io' }
-        maven { url 'https://storage.yandexcloud.net/maven/' } // Для Yandex SpeechKit
+        maven {
+            url "https://jitpack.io"
+        }
+        maven {
+            url "https://maven.google.com"
+        }
+        maven {
+            url "https://repo.maven.apache.org/maven2"
+        }
+        maven {
+            url "https://artifactory.yandex.ru/artifactory/yandex-mobile-releases/"
+        }
     }
 }

@@ -1,9 +1,24 @@
 package com.rashot.audioguideai.presentation.ui
 
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            AudioGuideAITheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainScreen()
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -22,20 +37,16 @@ fun MainScreen(viewModel: MainViewModel = hiltViewModel()) {
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            GoogleMap(
+            // Замените GoogleMap на YandexMapView
+            YandexMapView(
                 modifier = Modifier.weight(1f),
-                properties = MapProperties(
-                    isMyLocationEnabled = true,
-                    mapType = MapType.NORMAL
-                ),
-                cameraPositionState = rememberCameraPositionState {
-                    position = CameraPosition.fromLatLngZoom(
-                        LatLng(
-                            uiState.currentLocation?.latitude ?: 0.0,
-                            uiState.currentLocation?.longitude ?: 0.0
-                        ), 15f
-                    )
-                }
+                cameraPosition = CameraPosition(
+                    Point(
+                        uiState.currentLocation?.latitude ?: 55.751574,
+                        uiState.currentLocation?.longitude ?: 37.573856
+                    ),
+                    15f
+                )
             )
 
             uiState.currentPoi?.let { poi ->

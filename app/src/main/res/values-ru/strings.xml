@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">AudioGuideAI</string>
+    <string name="btn_settings">Настройки</string>
+    <string name="btn_history">История</string>
+    <string name="title_settings">Настройки</string>
+    <string name="title_history">История</string>
+    <string name="voice_stop">хватит</string>
+    <string name="voice_next">дальше</string>
+</resources>

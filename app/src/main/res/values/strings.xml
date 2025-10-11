@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">AudioGuideAI</string>
+    <string name="btn_settings">Settings</string>
+    <string name="btn_history">History</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_history">History</string>
+    <string name="voice_stop">stop</string>
+    <string name="voice_next">next</string>
+    <string name="mapkit_key_placeholder">YOUR_YANDEX_MAPKIT_API_KEY</string>
 </resources>

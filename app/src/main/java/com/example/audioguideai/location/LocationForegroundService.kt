@@ -1,5 +1,6 @@
 package com.example.audioguideai.location
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,9 +8,11 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.IBinder
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import com.example.audioguideai.MainActivity
 import com.example.audioguideai.R
@@ -42,10 +45,28 @@ class LocationForegroundService : Service() {
     }
 
     private fun requestUpdates() {
-        val req = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 5000L)
-            .setMinUpdateIntervalMillis(5000L)
+        // Проверяем разрешения
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            updateNotification("Разрешения на геолокацию не предоставлены")
+            return
+        }
+        
+        // Сначала пытаемся получить последнее известное местоположение
+        fused.lastLocation.addOnSuccessListener { location ->
+            location?.let {
+                lastLocationFlow.value = it
+                updateNotification("Ш: %.5f Д: %.5f".format(it.latitude, it.longitude))
+            }
+        }
+        
+        // Настраиваем быстрые обновления для точного позиционирования
+        val req = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2000L)
+            .setMinUpdateIntervalMillis(1000L)
+            .setMaxUpdateDelayMillis(5000L)
             .setWaitForAccurateLocation(false)
+            .setMinUpdateDistanceMeters(5f) // Обновляем только при движении на 5+ метров
             .build()
+        
         fused.requestLocationUpdates(req, callback, mainLooper)
     }
 

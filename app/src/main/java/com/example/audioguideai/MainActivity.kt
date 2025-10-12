@@ -4,18 +4,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.audioguideai.location.LocationForegroundService
+import com.example.audioguideai.permissions.PermissionHandler
+import com.example.audioguideai.permissions.PermissionManager
+import com.example.audioguideai.permissions.SequentialPermissionHandler
 import com.example.audioguideai.ui.screens.HistoryScreen
 import com.example.audioguideai.ui.screens.MapScreen
+import com.example.audioguideai.ui.screens.PermissionScreen
 import com.example.audioguideai.ui.screens.SettingsScreen
 import com.example.audioguideai.ui.theme.AppTheme
-import androidx.compose.runtime.LaunchedEffect
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,15 +30,74 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppRoot() {
     val ctx = LocalContext.current
-    LaunchedEffect(Unit) { LocationForegroundService.start(ctx) }
+    var hasPermissions by remember { mutableStateOf(PermissionManager.hasAllPermissions(ctx)) }
+    var requestPermissions by remember { mutableStateOf(false) }
+    var mapCenterTrigger by remember { mutableStateOf(0) }
 
     AppTheme {
-        val nav = rememberNavController()
-        Scaffold { padding ->
-            NavHost(navController = nav, startDestination = "map", modifier = Modifier) {
-                composable("map") { MapScreen(onOpenSettings = { nav.navigate("settings") }, onOpenHistory = { nav.navigate("history") }) }
-                composable("settings") { SettingsScreen(onBack = { nav.popBackStack() }) }
-                composable("history") { HistoryScreen(onBack = { nav.popBackStack() }) }
+        // Если все разрешения предоставлены, показываем основное приложение
+        if (hasPermissions) {
+            // Запускаем сервис геолокации при наличии всех разрешений
+            LaunchedEffect(Unit) {
+                LocationForegroundService.start(ctx)
+            }
+            
+            // Основное приложение
+            val nav = rememberNavController()
+            Scaffold { padding ->
+                NavHost(navController = nav, startDestination = "map", modifier = Modifier) {
+                    composable("map") { 
+                        MapScreen(
+                            onOpenSettings = { nav.navigate("settings") }, 
+                            onOpenHistory = { nav.navigate("history") },
+                            centerTrigger = mapCenterTrigger
+                        ) 
+                    }
+                    composable("settings") { 
+                        SettingsScreen(
+                            onBack = { 
+                                mapCenterTrigger++ // Центрируем карту при возвращении
+                                nav.popBackStack() 
+                            },
+                            onRequestPermissions = { 
+                                hasPermissions = false
+                                requestPermissions = true
+                            }
+                        ) 
+                    }
+                    composable("history") { 
+                        HistoryScreen(
+                            onBack = { 
+                                mapCenterTrigger++ // Центрируем карту при возвращении
+                                nav.popBackStack() 
+                            }
+                        ) 
+                    }
+                }
+            }
+        } else {
+            // Показываем экран разрешений
+            PermissionScreen(
+                onRequestPermissions = {
+                    requestPermissions = true
+                },
+                isRequestingPermissions = requestPermissions
+            )
+            
+            // SequentialPermissionHandler работает поверх PermissionScreen
+            if (requestPermissions) {
+                SequentialPermissionHandler(
+                    onPermissionsGranted = {
+                        hasPermissions = true
+                        requestPermissions = false
+                    },
+                    onPermissionsDenied = {
+                        // Остаемся на экране разрешений для повторного запроса
+                        requestPermissions = false
+                        // Принудительно обновляем состояние разрешений
+                        hasPermissions = PermissionManager.hasAllPermissions(ctx)
+                    }
+                )
             }
         }
     }

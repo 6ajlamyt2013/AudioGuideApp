@@ -1,6 +1,10 @@
 package com.example.audioguideai
 
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Scaffold
@@ -24,6 +28,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent { AppRoot() }
+        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val hasMagnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null
+        val hasAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
+
+        Log.d("MainActivity", "Has magnetometer: $hasMagnetometer")
+        Log.d("MainActivity", "Has accelerometer: $hasAccelerometer")
     }
 }
 

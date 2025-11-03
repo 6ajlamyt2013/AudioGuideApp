@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -23,6 +24,7 @@ import com.example.audioguideai.ui.screens.MapScreen
 import com.example.audioguideai.ui.screens.PermissionScreen
 import com.example.audioguideai.ui.screens.SettingsScreen
 import com.example.audioguideai.ui.theme.AppTheme
+import com.example.audioguideai.viewmodel.GuideViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,13 +56,15 @@ fun AppRoot() {
             
             // Основное приложение
             val nav = rememberNavController()
+            val viewModel: GuideViewModel = viewModel()
             Scaffold { padding ->
                 NavHost(navController = nav, startDestination = "map", modifier = Modifier) {
                     composable("map") { 
                         MapScreen(
                             onOpenSettings = { nav.navigate("settings") }, 
                             onOpenHistory = { nav.navigate("history") },
-                            centerTrigger = mapCenterTrigger
+                            centerTrigger = mapCenterTrigger,
+                            viewModel = viewModel
                         ) 
                     }
                     composable("settings") { 
@@ -72,6 +76,10 @@ fun AppRoot() {
                             onRequestPermissions = { 
                                 hasPermissions = false
                                 requestPermissions = true
+                            },
+                            onStart = {
+                                // Запускаем GeoGuideService
+                                com.example.audioguideai.service.GeoGuideService.start(ctx)
                             }
                         ) 
                     }

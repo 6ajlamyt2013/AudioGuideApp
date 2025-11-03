@@ -86,7 +86,6 @@ class OrientationManager(context: Context) : SensorEventListener {
             if (abs(azimuthInDegrees - lastAzimuth) > threshold) {
                 lastAzimuth = azimuthInDegrees
                 _azimuthFlow.value = azimuthInDegrees
-                Log.d("OrientationManager", "Azimuth updated: $azimuthInDegrees°")
             }
         }
     }

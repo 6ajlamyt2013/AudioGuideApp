@@ -27,6 +27,11 @@
             android:name=".location.LocationForegroundService"
             android:exported="false"
             android:foregroundServiceType="location" />
+        
+        <service
+            android:name=".service.GeoGuideService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
         <receiver
             android:name=".geofencing.GeofenceReceiver"

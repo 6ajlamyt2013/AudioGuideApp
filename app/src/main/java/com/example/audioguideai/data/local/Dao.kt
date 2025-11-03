@@ -7,15 +7,18 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PoiDao {
     @Query("SELECT * FROM poi") fun all(): Flow<List<Poi>>
-    @Query("SELECT * FROM poi WHERE id = :id") suspend fun byId(id: Long): Poi?
+    @Query("SELECT * FROM poi WHERE osmId = :osmId") suspend fun byOsmId(osmId: Long): Poi?
+    @Query("SELECT * FROM poi WHERE osmId = :osmId") suspend fun byId(osmId: Long): Poi?
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAll(list: List<Poi>)
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(poi: Poi): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(poi: Poi)
 }
 
 @Dao
 interface HistoryDao {
     @Query("SELECT * FROM history ORDER BY timestamp DESC") fun all(): Flow<List<HistoryItem>>
     @Insert suspend fun insert(item: HistoryItem)
+    @Query("DELETE FROM history WHERE timestamp < :threshold") suspend fun deleteOlderThan(threshold: Long)
+    @Query("DELETE FROM history") suspend fun clearAll()
 }
 
 @Dao

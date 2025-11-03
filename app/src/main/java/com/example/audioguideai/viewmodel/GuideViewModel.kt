@@ -31,15 +31,18 @@ class GuideViewModel(app: Application) : AndroidViewModel(app) {
             combine(LocationForegroundService.lastLocationFlow.filterNotNull(), settings.settings) { loc, set ->
                 Pair(loc, set)
             }.collect { (loc, set) ->
-                repo.refreshAround(loc.latitude, loc.longitude)
+                android.util.Log.d("GuideViewModel", "📍 Location update: (${loc.latitude}, ${loc.longitude})")
+                android.util.Log.d("GuideViewModel", "⚙️ Settings: radius=${set.radiusM}m, enabled categories=${set.enabledCategories.size}")
                 val list = repo.allPoi().firstOrNull().orEmpty().filter { it.category.name in set.enabledCategories }
-                // геозоны
+                android.util.Log.d("GuideViewModel", "🗺️ Total POIs: ${repo.allPoi().firstOrNull()?.size ?: 0}, Filtered: ${list.size}")
                 GeofenceManager(getApplication()).setGeofences(list.map { it.id to Triple(it.lat, it.lon, set.radiusM.toFloat()) })
-                // ближайший
                 val nearest = list.minByOrNull { p -> GeoUtils.distanceMeters(loc.latitude, loc.longitude, p.lat, p.lon) }
                 if (nearest != null) {
                     val d = GeoUtils.distanceMeters(loc.latitude, loc.longitude, nearest.lat, nearest.lon)
+                    android.util.Log.d("GuideViewModel", "🎯 Nearest POI: '${nearest.title}' at ${d.toInt()}m (threshold: ${set.radiusM}m)")
                     if (d <= set.radiusM) onEnterPoi(nearest)
+                } else {
+                    android.util.Log.d("GuideViewModel", "❌ No POIs found in the area")
                 }
             }
         }
@@ -50,8 +53,19 @@ class GuideViewModel(app: Application) : AndroidViewModel(app) {
         if (lastSpokenId == poi.id) return
         lastSpokenId = poi.id
         _currentPoi.value = poi
-        tts.speak("${'$'}{poi.title}. ${'$'}{poi.description}")
-        viewModelScope.launch { repo.addHistory(poi.id) }
+        val categoryText = poi.category.titleRu
+        val description = poi.description ?: ""
+        val speechText = "$categoryText. ${poi.title}. $description"
+        android.util.Log.i("GuideViewModel", "🎤 SPEAKING: $speechText")
+        tts.speak(speechText)
+        viewModelScope.launch {
+            val distance = repo.calculateDistance(
+                LocationForegroundService.lastLocationFlow.value?.latitude ?: 0.0,
+                LocationForegroundService.lastLocationFlow.value?.longitude ?: 0.0,
+                poi.lat, poi.lon
+            )
+            repo.addHistory(poi, distance)
+        }
     }
 
     fun stopSpeech() = tts.stop()
